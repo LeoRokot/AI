@@ -1,0 +1,155 @@
+#include <iostream>
+#include <limits>
+
+using namespace std;
+
+const char PLAYER_X = 'X';
+const char PLAYER_O = 'O';
+const char EMPTY = ' ';
+
+struct Move {
+    int row, col;
+};
+
+// Проверка на победу или ничью
+bool isGameOver(const char board[3][3], char player) {
+    // Проверка по горизонтали и вертикали
+    for (int i = 0; i < 3; ++i) {
+        if ((board[i][0] == player && board[i][1] == player && board[i][2] == player) ||
+            (board[0][i] == player && board[1][i] == player && board[2][i] == player)) {
+            return true;
+        }
+    }
+    // Проверка по диагоналям
+    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
+        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
+        return true;
+    }
+    // Проверка на ничью
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            if (board[i][j] == EMPTY) {
+                return false;
+            }
+        }
+    }
+    return true; // Ничья
+}
+
+// Рекурсивная функция минимакса
+int minimax(char board[3][3], char player) {
+    if (isGameOver(board, PLAYER_X)) {
+        return 10; // Выигрыш компьютера
+    }
+    else if (isGameOver(board, PLAYER_O)) {
+        return -10; // Выигрыш игрока
+    }
+    else if (isGameOver(board, EMPTY)) {
+        return 0; // Ничья
+    }
+
+    if (player == PLAYER_X) {
+        int bestScore = numeric_limits<int>::min();
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (board[i][j] == EMPTY) {
+                    board[i][j] = PLAYER_X;
+                    bestScore = max(bestScore, minimax(board, PLAYER_O));
+                    board[i][j] = EMPTY;
+                }
+            }
+        }
+        return bestScore;
+    }
+    else {
+        int bestScore = numeric_limits<int>::max();
+        for (int i = 0; i < 3; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                if (board[i][j] == EMPTY) {
+                    board[i][j] = PLAYER_O;
+                    bestScore = min(bestScore, minimax(board, PLAYER_X));
+                    board[i][j] = EMPTY;
+                }
+            }
+        }
+        return bestScore;
+    }
+}
+
+// Определение следующего хода компьютера
+Move getComputerMove(char board[3][3]) {
+    int bestScore = numeric_limits<int>::min();
+    Move bestMove;
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            if (board[i][j] == EMPTY) {
+                board[i][j] = PLAYER_X;
+                int score = minimax(board, PLAYER_O);
+                board[i][j] = EMPTY;
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove.row = i;
+                    bestMove.col = j;
+                }
+            }
+        }
+    }
+    return bestMove;
+}
+
+// Функция для отображения игрового поля
+void displayBoard(const char board[3][3]) {
+    cout << "  0 1 2" << endl;
+    for (int i = 0; i < 3; ++i) {
+        cout << i << " ";
+        for (int j = 0; j < 3; ++j) {
+            cout << board[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+int main() {
+    char board[3][3] = {
+        {EMPTY, EMPTY, EMPTY},
+        {EMPTY, EMPTY, EMPTY},
+        {EMPTY, EMPTY, EMPTY}
+    };
+    bool gameOver = false;
+    char currentPlayer = PLAYER_O;
+
+    while (!gameOver) {
+        displayBoard(board);
+        Move move;
+        if (currentPlayer == PLAYER_O) {
+            cout << "Your move (row column): ";
+            cin >> move.row >> move.col;
+            while (board[move.row][move.col] != EMPTY) {
+                cout << "Invalid move, try again: ";
+                cin >> move.row >> move.col;
+            }
+            board[move.row][move.col] = currentPlayer;
+        }
+        else {
+            move = getComputerMove(board);
+            cout << "Computer's move: " << move.row << " " << move.col << endl;
+            board[move.row][move.col] = currentPlayer;
+        }
+
+        if (isGameOver(board, currentPlayer)) {
+            displayBoard(board);
+            if (currentPlayer == PLAYER_O) {
+                cout << "You win!" << endl;
+            }
+            else {
+                cout << "Computer wins!" << endl;
+            }
+            gameOver = true;
+        }
+        else {
+            currentPlayer = (currentPlayer == PLAYER_O) ? PLAYER_X : PLAYER_O;
+        }
+    }
+
+    return 0;
+}
